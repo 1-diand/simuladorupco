@@ -10,7 +10,6 @@
         :root { --lupco-dark: #0B3D2E; --white: #FFFFFF; }
         body, html { width: 100%; height: 100%; margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-        /* PORTADA CON IMAGEN DE FONDO */
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -28,7 +27,6 @@
             border-radius: 50px; font-weight: bold; cursor: pointer;
             text-transform: uppercase; font-size: 0.9rem; margin: 10px;
             min-width: 260px; background: var(--lupco-dark);
-            -webkit-appearance: none; /* Mejora compatibilidad en iOS */
         }
 
         .hidden { display: none !important; }
@@ -42,13 +40,13 @@
         </div>
         <h1>Actos Inseguros en Operaciones</h1>
         
-        <button class="btn" onclick="lanzarVR()">🥽 Usar con Visor VR</button>
-        <button class="btn" onclick="lanzarNavegador()">📱 Ver en Navegador</button>
+        <button class="btn" onclick="ejecutarVR()">🥽 Usar con Visor VR</button>
+        <button class="btn" onclick="ejecutarNavegador()">📱 Ver en Navegador</button>
        
         <p style="font-size: 0.7rem; margin-top: 20px; opacity: 0.8;">IV FORO DE EXCELENCIA OPERACIONAL</p>
     </div>
 
-    <a-scene vr-mode-ui="enabled: true" renderer="antialias: true; precision: medium;">
+    <a-scene vr-mode-ui="enabled: true">
         <a-assets>
             <img id="sky-img" src="360_vr_4096.jpg" crossorigin="anonymous">
         </a-assets>
@@ -65,46 +63,50 @@
         const sky = document.getElementById('main-sky');
         const overlay = document.getElementById('overlay');
 
-        // FUNCIÓN 1: MODO VISOR (Doble imagen)
-        function lanzarVR() {
-            activarSensores();
-            // Fullscreen primero
-            forzarFullscreen();
-            // Entrar a VR directamente
-            sky.setAttribute('visible', 'true');
-            overlay.classList.add('hidden');
-            setTimeout(() => { scene.enterVR(); }, 200);
-        }
-
-        // FUNCIÓN 2: MODO NAVEGADOR (Imagen única)
-        function lanzarNavegador() {
-            activarSensores();
-            // Fullscreen primero
-            forzarFullscreen();
-            // Mostrar escena sin activar modo VR
-            sky.setAttribute('visible', 'true');
-            overlay.classList.add('hidden');
-        }
-
-        // Bloque de Fullscreen universal
-        function forzarFullscreen() {
-            const el = document.documentElement;
-            const rfs = el.requestFullscreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-            if (rfs) rfs.call(el);
-        }
-
-        // Permisos de sensores (Giroscopio)
-        function activarSensores() {
+        // FUNCIÓN VR (DIVIDIR PANTALLA)
+        function ejecutarVR() {
+            // 1. Pantalla completa inmediata
+            solicitarFullscreen();
+            
+            // 2. Pedir permisos de sensores
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().catch(console.error);
+                DeviceOrientationEvent.requestPermission().then(res => {
+                    if(res === 'granted') activarEscena(true);
+                }).catch(() => activarEscena(true));
+            } else {
+                activarEscena(true);
             }
         }
 
-        // Escuchar cuando el usuario sale de VR para volver a la portada
+        // FUNCIÓN NAVEGADOR (IMAGEN ÚNICA)
+        function ejecutarNavegador() {
+            solicitarFullscreen();
+            activarEscena(false);
+        }
+
+        function activarEscena(esVR) {
+            sky.setAttribute('visible', 'true');
+            overlay.classList.add('hidden');
+
+            // CRÍTICO: enterVR() debe ser disparado por el flujo del clic original
+            if (esVR) {
+                // Un pequeño delay de 100ms ayuda a que el Fullscreen se asiente antes del VR
+                setTimeout(() => {
+                    scene.enterVR();
+                }, 100);
+            }
+        }
+
+        function solicitarFullscreen() {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        }
+
+        // Listener para volver al menú
         scene.addEventListener('exit-vr', () => {
             overlay.classList.remove('hidden');
             sky.setAttribute('visible', 'false');
-            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
         });
     </script>
 </body>
