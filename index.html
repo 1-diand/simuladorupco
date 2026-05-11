@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>UPCO VR | Simulador</title>
+    <title>UPCO VR | Calibración Tzumi</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
    
     <style>
@@ -40,13 +40,15 @@
         </div>
         <h1>Actos Inseguros en Operaciones</h1>
         
-        <button class="btn" onclick="ejecutarVR()">🥽 Usar con Visor VR</button>
-        <button class="btn" onclick="ejecutarNavegador()">📱 Ver en Navegador</button>
+        <button class="btn" onclick="forzarModoVR()">🥽 ACTIVAR MODO VISOR</button>
        
         <p style="font-size: 0.7rem; margin-top: 20px; opacity: 0.8;">IV FORO DE EXCELENCIA OPERACIONAL</p>
     </div>
 
-    <a-scene vr-mode-ui="enabled: true">
+    <a-scene 
+        webxr="referenceSpaceType: local; requiredFeatures: local-floor;"
+        vr-mode-ui="enabled: true; enterVRButton: #btn-oculto">
+        
         <a-assets>
             <img id="sky-img" src="360_vr_4096.jpg" crossorigin="anonymous">
         </a-assets>
@@ -54,8 +56,10 @@
         <a-sky id="main-sky" src="#sky-img" rotation="0 -90 0" visible="false"></a-sky>
 
         <a-entity id="rig">
-            <a-camera id="cam" fov="80" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true"></a-camera>
+            <a-camera fov="80" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true"></a-camera>
         </a-entity>
+
+        <div id="btn-oculto" style="display:none"></div>
     </a-scene>
 
     <script>
@@ -63,50 +67,41 @@
         const sky = document.getElementById('main-sky');
         const overlay = document.getElementById('overlay');
 
-        // FUNCIÓN VR (DIVIDIR PANTALLA)
-        function ejecutarVR() {
-            // 1. Pantalla completa inmediata
-            solicitarFullscreen();
-            
-            // 2. Pedir permisos de sensores
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(res => {
-                    if(res === 'granted') activarEscena(true);
-                }).catch(() => activarEscena(true));
-            } else {
-                activarEscena(true);
-            }
-        }
-
-        // FUNCIÓN NAVEGADOR (IMAGEN ÚNICA)
-        function ejecutarNavegador() {
-            solicitarFullscreen();
-            activarEscena(false);
-        }
-
-        function activarEscena(esVR) {
-            sky.setAttribute('visible', 'true');
-            overlay.classList.add('hidden');
-
-            // CRÍTICO: enterVR() debe ser disparado por el flujo del clic original
-            if (esVR) {
-                // Un pequeño delay de 100ms ayuda a que el Fullscreen se asiente antes del VR
-                setTimeout(() => {
-                    scene.enterVR();
-                }, 100);
-            }
-        }
-
-        function solicitarFullscreen() {
+        function forzarModoVR() {
+            // 1. Pantalla completa primero (Obligatorio)
             const el = document.documentElement;
             if (el.requestFullscreen) el.requestFullscreen();
             else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+
+            // 2. Permisos de Sensores
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(res => {
+                    if(res === 'granted') activarDoblePantalla();
+                }).catch(() => activarDoblePantalla());
+            } else {
+                activarDoblePantalla();
+            }
         }
 
-        // Listener para volver al menú
-        scene.addEventListener('exit-vr', () => {
-            overlay.classList.remove('hidden');
-            sky.setAttribute('visible', 'false');
+        function activarDoblePantalla() {
+            sky.setAttribute('visible', 'true');
+            overlay.classList.add('hidden');
+
+            // 3. Forzado de VR Estereoscópico
+            // Si el navegador bloquea enterVR(), intentamos lanzarlo con un delay mínimo
+            setTimeout(() => {
+                if (scene.enterVR) {
+                    scene.enterVR();
+                } else {
+                    // Si falla, notificamos (esto suele pasar por falta de HTTPS)
+                    alert("Tu navegador bloqueó el modo VR. Asegúrate de usar una conexión segura (HTTPS).");
+                }
+            }, 200);
+        }
+
+        // Si entras a VR pero sigue sin dividir, intenta pulsar el icono de gafas que saldrá abajo
+        scene.addEventListener('enter-vr', () => {
+            console.log("Entró en modo VR");
         });
     </script>
 </body>
