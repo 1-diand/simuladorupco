@@ -8,12 +8,11 @@
    
     <style>
         :root {
-            --lupco-dark: #0B3D2E;      /* Verde Corporativo UPCO */
+            --lupco-dark: #0B3D2E;      /* Verde Corporativo */
             --lupco-accent: #1A5C45;
             --white: #FFFFFF;
         }
 
-        /* RESET GENERAL */
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body, html {
@@ -21,98 +20,85 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
-            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
        
-        /* PORTADA DE BIENVENIDA (OVERLAY) */
+        /* PORTADA RESPONSIVA */
         #overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
             text-align: center;
-            padding: 20px;
-            /* Graduación de color sobre la imagen de portada */
-            background: linear-gradient(to bottom, rgba(11, 61, 46, 0.75), rgba(11, 61, 46, 0.95)), 
+            padding: 30px;
+            /* El degradado ayuda a que el texto sea legible sobre la imagen */
+            background: linear-gradient(to bottom, rgba(11, 61, 46, 0.8), rgba(11, 61, 46, 0.95)), 
                         url('portada.jpg') no-repeat center center;
-            background-size: cover; /* Ajusta la imagen al tamaño de la pantalla */
+            background-size: cover;
             transition: opacity 0.6s ease;
         }
        
-        /* CONTENEDOR DEL LOGO */
         .logo-container {
-            margin-bottom: 2rem;
-            width: 60%;
-            max-width: 200px; /* Evita que el logo se vea gigante */
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+            margin-bottom: 20px;
+            width: 50%;
+            max-width: 180px; /* Tamaño controlado para evitar que se vea gigante */
         }
 
         .logo-container img {
             width: 100%;
             height: auto;
-            display: block;
         }
 
-        /* TEXTOS */
-        #overlay h1 {
+        h1 {
             color: var(--white);
-            font-size: clamp(1.2rem, 5vw, 2rem); /* Tamaño fluido según pantalla */
-            margin-bottom: 1rem;
+            font-size: clamp(1.1rem, 4vw, 1.8rem);
+            margin-bottom: 15px;
             text-transform: uppercase;
-            font-weight: 700;
-            line-height: 1.2;
-            max-width: 85%;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            font-weight: bold;
+            max-width: 500px;
+            line-height: 1.3;
         }
 
-        #overlay p {
-            color: rgba(255,255,255,0.9);
-            font-size: 1rem;
-            margin-bottom: 2rem;
+        p {
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
         }
        
-        /* BOTÓN DE ACCIÓN */
         #btn-vr {
-            padding: 16px 36px;
+            padding: 16px 32px;
             background: var(--lupco-dark);
             color: var(--white);
-            border: 2px solid rgba(255,255,255,0.5);
+            border: 2px solid rgba(255,255,255,0.4);
             border-radius: 50px;
             font-size: 1rem;
-            font-weight: 700;
+            font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: 0.3s;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         #btn-vr:hover {
             background: var(--lupco-accent);
             transform: scale(1.05);
-            border-color: var(--white);
         }
-       
-        /* ELEMENTOS OCULTOS */
-        .hidden { opacity: 0; visibility: hidden; pointer-events: none; }
        
         .footer {
             position: absolute;
             bottom: 20px;
-            width: 100%;
-            text-align: center;
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.7);
-            letter-spacing: 0.5px;
+            font-size: 0.7rem;
+            opacity: 0.6;
+            letter-spacing: 1px;
         }
 
-        /* ESCENA A-FRAME */
+        .hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        /* Ajuste de nitidez para el canvas 3D */
         a-scene {
             display: block;
             width: 100%;
@@ -124,82 +110,80 @@
 
     <div id="overlay">
         <div class="logo-container">
-            <img src="logo_upco.png" alt="UPCO Logo" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='block';">
-            <h2 id="logo-fallback" style="display:none; color:white; font-size:2rem;">UPCO</h2>
+            <img src="logo_upco.png" alt="UPCO" onerror="this.style.display='none'; document.getElementById('logo-txt').style.display='block';">
+            <h2 id="logo-txt" style="display:none;">UPCO</h2>
         </div>
        
         <h1>DETERMINA LOS ACTOS INSEGUROS EN LAS OPERACIONES PETROLERAS</h1>
         <p>IV Foro de Excelencia Operacional</p>
        
-        <button id="btn-vr" onclick="solicitarPermisosYEntrar()">🥽 INICIAR EXPERIENCIA VR</button>
+        <button id="btn-vr" onclick="iniciarExperiencia()">🚀 EMPEZAR EXPLORACIÓN</button>
        
         <div class="footer">
-            21 de mayo • UPCO ©2026
+            21 DE MAYO • UPCO ©2026
         </div>
     </div>
 
-    <a-scene vr-mode-ui="enabled: true" renderer="antialias: true; colorManagement: true;">
+    <a-scene 
+        vr-mode-ui="enabled: true" 
+        renderer="antialias: true; colorManagement: true; highRefreshRate: true; precision: high;">
         
         <a-assets>
-            <img id="sky-360" src="360_vr_4096.jpg">
+            <img id="textura-360" src="360_vr_4096.jpg" crossorigin="anonymous">
         </a-assets>
        
-        <a-sky id="vr-sky" src="#sky-360" rotation="0 -90 0" visible="false"></a-sky>
+        <a-sky id="vr-sky" src="#textura-360" rotation="0 -90 0" visible="false"></a-sky>
 
-        <a-entity id="rig">
+        <a-entity id="rig" position="0 0 0">
             <a-camera id="main-camera" 
+                      fov="75"
                       look-controls="magicWindowTrackingEnabled: true; touchEnabled: true; mouseEnabled: true"
-                      wasd-controls-enabled="false"
-                      position="0 1.6 0">
+                      wasd-controls-enabled="false">
             </a-camera>
         </a-entity>
 
     </a-scene>
 
     <script>
-        /**
-         * Solicita permisos de sensores para móviles y activa la vista VR
-         */
-        async function solicitarPermisosYEntrar() {
+        async function iniciarExperiencia() {
             const scene = document.querySelector('a-scene');
             const sky = document.getElementById('vr-sky');
             const overlay = document.getElementById('overlay');
 
-            // Lógica obligatoria para iOS 13+ y navegadores con políticas de privacidad estrictas
+            // 1. Solicitar permisos (Necesario para que el giroscopio funcione y se pueda enfocar al mover)
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
-                    const response = await DeviceOrientationEvent.requestPermission();
-                    if (response === 'granted') {
-                        activarEscena(scene, sky, overlay);
+                    const status = await DeviceOrientationEvent.requestPermission();
+                    if (status === 'granted') {
+                        ejecutarCarga();
                     } else {
-                        alert("Es necesario el permiso de movimiento para explorar la escena 360.");
+                        alert("Permiso de sensores denegado. No podrás girar la cámara moviendo el teléfono.");
+                        ejecutarCarga();
                     }
-                } catch (e) {
-                    console.error("Error al solicitar permisos de sensores:", e);
-                    activarEscena(scene, sky, overlay); // Intento de respaldo
+                } catch (err) {
+                    console.error(err);
+                    ejecutarCarga();
                 }
             } else {
-                // Para Android y navegadores de escritorio
-                activarEscena(scene, sky, overlay);
+                ejecutarCarga();
+            }
+
+            function ejecutarCarga() {
+                if (sky) sky.setAttribute('visible', 'true');
+                if (overlay) overlay.classList.add('hidden');
+                
+                // Aplicar máxima resolución del dispositivo para evitar imagen borrosa
+                if (scene.renderer) {
+                    scene.renderer.setPixelRatio(window.devicePixelRatio);
+                }
+
+                // OPCIONAL: Si quieres que entre a pantalla dividida automáticamente al pulsar, 
+                // descomenta la siguiente línea. Pero para enfoque manual es mejor dejarlo en pantalla normal.
+                // scene.enterVR(); 
             }
         }
 
-        function activarEscena(scene, sky, overlay) {
-            if (sky) sky.setAttribute('visible', 'true');
-            if (overlay) overlay.classList.add('hidden');
-            
-            // Forzar entrada a modo VR
-            if (scene.enterVR) {
-                scene.enterVR();
-            }
-            
-            // Optimización de resolución para mejorar rendimiento en dispositivos móviles
-            if (AFRAME.utils.device.isMobile()) {
-                scene.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.2));
-            }
-        }
-
-        // Si el usuario sale del modo VR, restaurar la interfaz de inicio
+        // Si el usuario sale del modo VR, volvemos a mostrar la portada de UPCO
         document.querySelector('a-scene').addEventListener('exit-vr', () => {
             document.getElementById('overlay').classList.remove('hidden');
             document.getElementById('vr-sky').setAttribute('visible', 'false');
