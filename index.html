@@ -3,30 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>UPCO VR | Calibración Tzumi</title>
+    <title>UPCO VR | Calibración Final</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
    
     <style>
         :root { --lupco-dark: #0B3D2E; --white: #FFFFFF; }
-        body, html { width: 100%; height: 100%; margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
-
-        #overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 100; text-align: center;
-            background: linear-gradient(to bottom, rgba(11, 61, 46, 0.8), rgba(11, 61, 46, 0.95)), 
-                        url('portada.jpg') no-repeat center center;
-            background-size: cover; color: white;
+        
+        /* Reset para evitar fallos en iOS */
+        html, body { 
+            width: 100%; height: 100%; margin: 0; padding: 0; 
+            overflow: hidden; background-color: #000;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .logo-container { width: 150px; margin-bottom: 20px; }
+        /* CAPA DE PORTADA - Ajustada para visibilidad en iPhone */
+        #overlay {
+            position: fixed; /* Fixed es más estable en iOS que absolute */
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; /* Máximo nivel para que no desaparezca */
+            text-align: center;
+            background: linear-gradient(to bottom, rgba(11, 61, 46, 0.85), rgba(11, 61, 46, 0.95)), 
+                        url('portada.jpg') no-repeat center center;
+            background-size: cover;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        .logo-container { width: 140px; margin-bottom: 20px; }
         .logo-container img { width: 100%; height: auto; }
 
+        h1 { font-size: 1.3rem; padding: 0 15px; text-transform: uppercase; margin-bottom: 15px; }
+
+        /* BOTONES - Diseño táctil para iPhone/Android */
         .btn {
-            padding: 18px 30px; color: white; border: 2px solid white;
-            border-radius: 50px; font-weight: bold; cursor: pointer;
-            text-transform: uppercase; font-size: 0.9rem; margin: 10px;
-            min-width: 260px; background: var(--lupco-dark);
+            padding: 18px 25px;
+            margin: 10px;
+            min-width: 260px;
+            background-color: var(--lupco-dark);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            /* Evita que el iPhone aplique estilos por defecto */
+            -webkit-appearance: none;
+            display: block;
         }
 
         .hidden { display: none !important; }
@@ -40,15 +64,13 @@
         </div>
         <h1>Actos Inseguros en Operaciones</h1>
         
-        <button class="btn" onclick="forzarModoVR()">🥽 ACTIVAR MODO VISOR</button>
+        <button class="btn" onclick="iniciarConPermisos('visor')">🥽 MODO VISOR (TZUMI)</button>
+        <button class="btn" onclick="iniciarConPermisos('navegador')">📱 MODO NAVEGADOR</button>
        
         <p style="font-size: 0.7rem; margin-top: 20px; opacity: 0.8;">IV FORO DE EXCELENCIA OPERACIONAL</p>
     </div>
 
-    <a-scene 
-        webxr="referenceSpaceType: local; requiredFeatures: local-floor;"
-        vr-mode-ui="enabled: true; enterVRButton: #btn-oculto">
-        
+    <a-scene webxr="referenceSpaceType: local" vr-mode-ui="enabled: true">
         <a-assets>
             <img id="sky-img" src="360_vr_4096.jpg" crossorigin="anonymous">
         </a-assets>
@@ -56,10 +78,9 @@
         <a-sky id="main-sky" src="#sky-img" rotation="0 -90 0" visible="false"></a-sky>
 
         <a-entity id="rig">
-            <a-camera fov="80" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true"></a-camera>
+            <a-camera id="cam" fov="80" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true; reverseMouseDrag: false">
+            </a-camera>
         </a-entity>
-
-        <div id="btn-oculto" style="display:none"></div>
     </a-scene>
 
     <script>
@@ -67,41 +88,54 @@
         const sky = document.getElementById('main-sky');
         const overlay = document.getElementById('overlay');
 
-        function forzarModoVR() {
-            // 1. Pantalla completa primero (Obligatorio)
-            const el = document.documentElement;
-            if (el.requestFullscreen) el.requestFullscreen();
-            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        async function iniciarConPermisos(modo) {
+            // 1. Fullscreen inmediato (Resuelve el fallo de PC/Android)
+            const doc = document.documentElement;
+            if (doc.requestFullscreen) doc.requestFullscreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-            // 2. Permisos de Sensores
+            // 2. SOLUCIÓN PARA IPHONE Y ANDROID (Sensores)
+            // En iOS Safari es obligatorio pedir permiso explícito
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(res => {
-                    if(res === 'granted') activarDoblePantalla();
-                }).catch(() => activarDoblePantalla());
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        lanzarEscena(modo);
+                    } else {
+                        alert("Sin permisos de movimiento, la cámara no girará.");
+                        lanzarEscena(modo);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    lanzarEscena(modo);
+                }
             } else {
-                activarDoblePantalla();
+                // Para Android o navegadores que no requieren permiso
+                lanzarEscena(modo);
             }
         }
 
-        function activarDoblePantalla() {
+        function lanzarEscena(modo) {
             sky.setAttribute('visible', 'true');
             overlay.classList.add('hidden');
 
-            // 3. Forzado de VR Estereoscópico
-            // Si el navegador bloquea enterVR(), intentamos lanzarlo con un delay mínimo
+            // Pequeño delay para que el motor gráfico procese la entrada
             setTimeout(() => {
-                if (scene.enterVR) {
+                if (modo === 'visor') {
                     scene.enterVR();
-                } else {
-                    // Si falla, notificamos (esto suele pasar por falta de HTTPS)
-                    alert("Tu navegador bloqueó el modo VR. Asegúrate de usar una conexión segura (HTTPS).");
                 }
+                
+                // Forzar refresco de cámara para asegurar que el movimiento inicie
+                const camEntity = document.getElementById('cam');
+                camEntity.components['look-controls'].pause();
+                camEntity.components['look-controls'].play();
             }, 200);
         }
 
-        // Si entras a VR pero sigue sin dividir, intenta pulsar el icono de gafas que saldrá abajo
-        scene.addEventListener('enter-vr', () => {
-            console.log("Entró en modo VR");
+        // Listener para restaurar menú al salir
+        scene.addEventListener('exit-vr', () => {
+            overlay.classList.remove('hidden');
+            sky.setAttribute('visible', 'false');
         });
     </script>
 </body>
