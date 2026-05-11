@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>UPCO | Determina Actos Inseguros</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+   
+    <style>
+        :root {
+            --lupco-dark: #0B3D2E;      /* Verde Corporativo UPCO */
+            --lupco-accent: #1A5C45;
+            --white: #FFFFFF;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background-color: #000;
+            overflow: hidden;
+            color: var(--white);
+        }
+       
+        /* CAPA DE BIENVENIDA (OVERLAY) */
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: linear-gradient(to bottom, rgba(11, 61, 46, 0.6), rgba(11, 61, 46, 0.95));
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+            transition: opacity 0.6s ease;
+        }
+       
+        .logo-container {
+            margin-bottom: 2rem;
+            max-width: 280px;
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.4));
+        }
+
+        #overlay h1 {
+            font-size: clamp(1.2rem, 5vw, 2.2rem);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+       
+        #btn-vr {
+            padding: 18px 40px;
+            background: var(--lupco-dark);
+            color: var(--white);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        #btn-vr:hover {
+            background: var(--lupco-accent);
+            transform: scale(1.05);
+        }
+       
+        .hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+       
+        .footer {
+            position: absolute; bottom: 24px; width: 100%;
+            text-align: center; font-size: 0.8rem;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+
+        a-scene {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div class="logo-container">
+            <img src="logo_upco.png" alt="UPCO Logo" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='block';">
+            <h2 id="logo-fallback" style="display:none; font-size:2.5rem;">UPCO</h2>
+        </div>
+       
+        <h1>DETERMINA LOS ACTOS INSEGUROS EN LAS OPERACIONES PETROLERAS</h1>
+        <p style="margin-bottom: 25px; font-size: 1.1rem;">Explora las instalaciones y detecta riesgos potenciales.</p>
+       
+        <button id="btn-vr" onclick="solicitarPermisosYEntrar()">🥽 INICIAR EXPERIENCIA VR</button>
+       
+        <div class="footer">
+            IV Foro de Excelencia Operacional • 21 de mayo • UPCO ©2026
+        </div>
+    </div>
+
+    <a-scene vr-mode-ui="enabled: true" renderer="antialias: true; colorManagement: true;">
+        
+        <a-assets>
+            <img id="sky-360" src="360_vr_4096.jpg">
+        </a-assets>
+       
+        <a-sky id="vr-sky" src="#sky-360" rotation="0 -90 0" visible="false"></a-sky>
+
+        <a-entity id="rig">
+            <a-camera id="main-camera" 
+                      look-controls="magicWindowTrackingEnabled: true; touchEnabled: true; mouseEnabled: true"
+                      wasd-controls-enabled="false"
+                      position="0 1.6 0">
+            </a-camera>
+        </a-entity>
+
+    </a-scene>
+
+    <script>
+        /**
+         * Maneja la entrada a la experiencia solicitando permisos de sensores 
+         * requeridos por navegadores móviles modernos bajo HTTPS.
+         */
+        async function solicitarPermisosYEntrar() {
+            const scene = document.querySelector('a-scene');
+            const sky = document.getElementById('vr-sky');
+            const overlay = document.getElementById('overlay');
+
+            // Verificación de API de orientación (iOS 13+ y algunos Android)
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const response = await DeviceOrientationEvent.requestPermission();
+                    if (response === 'granted') {
+                        activarVR(scene, sky, overlay);
+                    } else {
+                        alert("Permiso denegado. El movimiento de cámara no funcionará sin sensores.");
+                    }
+                } catch (e) {
+                    console.error("Error solicitando permisos:", e);
+                }
+            } else {
+                // Navegadores que no requieren permiso manual o no lo soportan
+                activarVR(scene, sky, overlay);
+            }
+        }
+
+        function activarVR(scene, sky, overlay) {
+            // Mostrar el cielo y ocultar el menú inicial
+            if (sky) sky.setAttribute('visible', 'true');
+            if (overlay) overlay.classList.add('hidden');
+            
+            // Entrar al modo VR (pantalla dividida si se detecta visor)
+            if (scene.enterVR) {
+                scene.enterVR();
+            }
+            
+            // Ajustes de rendimiento para móviles
+            if (AFRAME.utils.device.isMobile()) {
+                const renderer = scene.renderer;
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            }
+        }
+
+        // Si el usuario sale del modo VR, mostramos el menú de nuevo
+        document.querySelector('a-scene').addEventListener('exit-vr', () => {
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('vr-sky').setAttribute('visible', 'false');
+        });
+    </script>
+</body>
+</html>
