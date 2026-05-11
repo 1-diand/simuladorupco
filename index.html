@@ -2,61 +2,34 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>UPCO VR | Simulador de Actos Inseguros</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>UPCO VR | Simulador</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
    
     <style>
-        :root {
-            --lupco-dark: #0B3D2E;
-            --white: #FFFFFF;
-        }
-
+        :root { --lupco-dark: #0B3D2E; --white: #FFFFFF; }
         body, html { width: 100%; height: 100%; margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-        /* PORTADA MEJORADA */
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 100; text-align: center;
-            background: linear-gradient(to bottom, rgba(11, 61, 46, 0.8), rgba(11, 61, 46, 0.95)), 
+            background: linear-gradient(to bottom, rgba(11, 61, 46, 0.85), rgba(11, 61, 46, 1)), 
                         url('portada.jpg') no-repeat center center;
-            background-size: cover;
-            transition: opacity 0.5s ease;
-            color: white;
+            background-size: cover; color: white;
         }
 
-        .logo-container { width: 160px; margin-bottom: 20px; }
+        .logo-container { width: 150px; margin-bottom: 20px; }
         .logo-container img { width: 100%; height: auto; }
 
-        h1 { font-size: 1.4rem; padding: 0 20px; text-transform: uppercase; margin-bottom: 10px; }
-       
-        .button-group { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-
         .btn {
-            padding: 16px 30px;
-            color: white;
-            border: 2px solid white;
-            border-radius: 50px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            transition: 0.3s;
-            min-width: 250px;
+            padding: 18px 30px; color: white; border: 2px solid white;
+            border-radius: 50px; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; font-size: 0.9rem; margin: 10px;
+            min-width: 260px; background: var(--lupco-dark);
         }
 
-        /* Botón para Visor (Doble Pantalla) */
-        #btn-visor { background: var(--lupco-dark); }
-        
-        /* Botón para Navegador (Pantalla Completa Única) */
-        #btn-browser { background: rgba(255,255,255,0.1); backdrop-filter: blur(5px); }
-
-        .btn:hover { transform: scale(1.05); background: var(--lupco-dark); }
-
-        .hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-
-        .footer { position: absolute; bottom: 20px; font-size: 0.7rem; opacity: 0.7; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -67,71 +40,65 @@
         </div>
         <h1>Actos Inseguros en Operaciones</h1>
         
-        <div class="button-group">
-            <button class="btn" id="btn-visor" onclick="iniciarModo('visor')">🥽 Usar con Visor VR</button>
-            <button class="btn" id="btn-browser" onclick="iniciarModo('navegador')">📱 Ver en Navegador</button>
-        </div>
+        <button class="btn" onclick="iniciarApp('visor')">🥽 Usar con Visor VR</button>
+        <button class="btn" onclick="iniciarApp('navegador')">📱 Ver en Navegador</button>
        
-        <div class="footer">IV FORO DE EXCELENCIA OPERACIONAL • UPCO</div>
+        <p style="font-size: 0.7rem; margin-top: 20px; opacity: 0.8;">IV FORO DE EXCELENCIA OPERACIONAL</p>
     </div>
 
-    <a-scene vr-mode-ui="enabled: true">
-        <a-assets>
-            <img id="sky-img" src="360_vr_4096.jpg">
+    <a-scene vr-mode-ui="enabled: true" renderer="antialias: true; precision: medium;">
+        <a-assets timeout="10000">
+            <img id="sky-img" src="360_vr_4096.jpg" crossorigin="anonymous">
         </a-assets>
 
         <a-sky id="main-sky" src="#sky-img" rotation="0 -90 0" visible="false"></a-sky>
 
         <a-entity id="rig">
-            <a-camera fov="80" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true">
-            </a-camera>
+            <a-camera fov="80" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true"></a-camera>
         </a-entity>
     </a-scene>
 
     <script>
-        async function iniciarModo(modo) {
+        function iniciarApp(modo) {
+            const docElm = document.documentElement;
             const scene = document.querySelector('a-scene');
             const overlay = document.getElementById('overlay');
             const sky = document.getElementById('main-sky');
 
-            // 1. Solicitar permisos de giroscopio (esencial para ambos modos en móvil)
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const res = await DeviceOrientationEvent.requestPermission();
-                    if (res !== 'granted') alert("Los sensores son necesarios para girar la vista.");
-                } catch (e) { console.error(e); }
+            // 1. SOLUCIÓN FULLSCREEN: Debe ejecutarse ANTES de cualquier otra lógica
+            if (docElm.requestFullscreen) {
+                docElm.requestFullscreen().catch(err => console.log("Error Fullscreen:", err));
+            } else if (docElm.webkitRequestFullscreen) { /* Safari/iOS */
+                docElm.webkitRequestFullscreen();
             }
 
-            // 2. Mostrar la escena
+            // 2. SOLUCIÓN PANTALLA NEGRA: Forzar actualización de textura
             sky.setAttribute('visible', 'true');
             overlay.classList.add('hidden');
 
-            // 3. Lógica según el modo seleccionado
-            if (modo === 'visor') {
-                // Entra directamente en modo pantalla dividida
-                scene.enterVR();
-            } else {
-                // Modo Navegador: Activar Pantalla Completa (API Fullscreen)
-                document.documentElement.requestFullscreen().catch(e => {
-                    console.log("El navegador bloqueó el Fullscreen automático o no es compatible.");
-                });
-            }
+            // Pequeño retraso para que la GPU procese el cambio
+            setTimeout(() => {
+                if (modo === 'visor') {
+                    scene.enterVR();
+                }
+                
+                // Refrescar el material para asegurar que no se vea negro
+                const mesh = sky.getObject3D('mesh');
+                if (mesh && mesh.material && mesh.material.map) {
+                    mesh.material.map.needsUpdate = true;
+                }
+            }, 300);
 
-            // Optimizar nitidez
-            if (scene.renderer) {
-                scene.renderer.setPixelRatio(window.devicePixelRatio);
+            // 3. PERMISOS DE SENSORES
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().catch(console.error);
             }
         }
 
-        // Si el usuario sale del modo VR o de Fullscreen, regresamos a la portada
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement) {
-                document.getElementById('overlay').classList.remove('hidden');
-            }
-        });
-
+        // Si se sale de VR, volver a mostrar el menú
         document.querySelector('a-scene').addEventListener('exit-vr', () => {
             document.getElementById('overlay').classList.remove('hidden');
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
         });
     </script>
 </body>
